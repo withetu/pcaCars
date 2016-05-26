@@ -1,0 +1,115 @@
+---
+title: "PCA on mtcars dataset"
+author: "Sahir Rai Bhatnagar"
+date: "March 23, 2016"
+output:
+  html_document:
+    fig_height: 7
+    fig_width: 9
+    keep_md: yes
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+```
+
+In the following document, we perform principal component analysis of the `datasets::mtcars` data
+
+# Introducing the `mtcars` dataset
+
+Here is the actual dataset
+
+```{r, results='asis'}
+knitr::kable(mtcars)
+```
+
+And here are the summary statistics for each variable
+
+```{r}
+summary(mtcars)
+```
+
+
+
+# Principal Component Analysis on the `mtcars` dataset
+
+```{r}
+# cor = TRUE indicates that PCA is performed on 
+# standardized data (mean = 0, variance= 1)
+pcaCars <- princomp(mtcars, cor = TRUE)
+
+# view objects stored in pcaCars
+names(pcaCars)
+
+# proportion of variance explained
+summary(pcaCars)
+```
+
+## Visulation of the PCs
+
+```{r}
+# bar plot
+plot(pcaCars)
+
+# scree plot
+plot(pcaCars, type = "l")
+
+```
+
+
+# Cluster Analysis Using PCA Scores
+
+First we cluster the cars using hierarchical clustering
+
+```{r}
+# cluster cars
+carsHC <- hclust(dist(pcaCars$scores), method = "ward.D2")
+
+# dendrogram
+plot(carsHC)
+
+```
+
+
+## Cutting the Dendrogram
+
+```{r}
+# cut the dendrogram into 3 clusters
+carsClusters <- cutree(carsHC, k = 3)
+
+# draw dendogram with red borders around the 3 clusters 
+plot(carsHC)
+rect.hclust(carsHC, k=3, border="red")
+```
+
+
+## First 2 PCs with Cluster Membership
+
+```{r}
+# add cluster to data frame of scores
+carsDf <- data.frame(pcaCars$scores, "cluster" = factor(carsClusters))
+str(carsDf)
+
+# plot the first 2 PCs with cluster membership
+# need to install ggplot2 and ggrepel packages first
+# using the following command in R: 
+# install.packages(c("ggplot2","ggrepel"))
+library(ggplot2)
+library(ggrepel)
+ggplot(carsDf,aes(x=Comp.1, y=Comp.2)) +
+  geom_text_repel(aes(label = rownames(carsDf))) +
+  theme_classic() +
+  geom_hline(yintercept = 0, color = "gray70") +
+  geom_vline(xintercept = 0, color = "gray70") +
+  geom_point(aes(color = cluster), alpha = 0.55, size = 3) +
+  xlab("PC1") +
+  ylab("PC2") + 
+  xlim(-5, 6) + 
+  ggtitle("PCA plot of Cars")
+```
+
+
